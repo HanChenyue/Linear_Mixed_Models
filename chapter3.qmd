@@ -1,0 +1,68 @@
+---
+title: "Chapter 3"
+format: html
+---
+
+```{r}
+library(nlme)
+library(janitor)
+library(dplyr)
+```
+
+```{r}
+data(RatPupWeight, package = "nlme")
+RatPupWeight <- RatPupWeight |> clean_names()
+```
+
+```{r}
+# Encoding
+RatPupWeight$sex <- factor(ifelse(RatPupWeight$sex == "Male", 1, 0))
+```
+
+```{r}
+# Fit initial linear mixed model
+model3.1.fit <- lme(
+  weight ~ treatment + sex + lsize + treatment:sex,
+  random = ~ 1 | litter,
+  data = RatPupWeight,
+  method = "REML"
+)
+```
+
+$$
+\begin{aligned}
+weight_{ij} &=
+(\beta_0 + b_j)
++ \beta_1\,treatment_{ij}
++ \beta_2\,sex_{ij}
++ \beta_3\,litsize_{ij}
++ \beta_4\,(treatment_{ij} \times sex_{ij})
++ \varepsilon_{ij} \\
+\\
+b_j &\sim \mathcal{N}(0,\sigma_b^2), \quad j = 1,\dots,J \\
+\varepsilon_{ij} &\sim \mathcal{N}(0,\sigma^2)
+\end{aligned}
+$$
+
+```{r}
+# RatPupWeight$treatment <- relevel(RatPupWeight$treatment, ref = "High")
+summary(model3.1.fit)
+```
+
+F-tests for the fixed effects in the model.
+
+```{r}
+anova(model3.1.fit)
+```
+
+The `anova()` function performs a series of `Type I F`-tests (or sequential) for the fixed effects in the model, each of which is conditional on the preceding terms in the model specification.  
+
+For example, the `Type I F`-test for `SEX1` is conditional on the `TREATMENT` effects, but the `Type I F`-test for `TREATMENT` is not conditional on the `SEX1` effect.
+
+The random.effects() function can be used to display the EBLUPs for the random
+litter effects:
+
+```{r}
+# Display the random effects (EBLUPs) from the model.
+random.effects(model3.1.fit)
+```
