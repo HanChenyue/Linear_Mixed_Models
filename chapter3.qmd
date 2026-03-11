@@ -4,19 +4,44 @@ format: html
 ---
 
 ```{r}
-library(nlme)
 library(janitor)
 library(dplyr)
+library(nlme)
 ```
 
 ```{r}
-data(RatPupWeight, package = "nlme")
-RatPupWeight <- RatPupWeight |> clean_names()
+ratpup <- read.delim(
+  "data/rat_pup.dat",
+  header = TRUE,
+  sep = "\t"
+)
+
+# Check structure
+str(ratpup)
 ```
 
 ```{r}
+ratpup |> head()
+ratpup |>
+  group_by(treatment, sex) |>
+  summarise(
+    Obs = n(),
+    Mean = mean(weight),
+    StdDev = sd(weight),
+    Minimum = min(weight),
+    Maximum = max(weight)
+  )
+```
+
+```{r}
+# Create numeric treatment variable as in SAS
+ratpup$treat <- NA
+ratpup$treat[ratpup$treatment == "High"] <- 1
+ratpup$treat[ratpup$treatment == "Low"] <- 2
+ratpup$treat[ratpup$treatment == "Control"] <- 3
+
 # Encoding
-RatPupWeight$sex <- factor(ifelse(RatPupWeight$sex == "Male", 1, 0))
+ratpup$sex <- factor(ifelse(ratpup$sex == "Male", 1, 0))
 ```
 
 ```{r}
@@ -24,7 +49,7 @@ RatPupWeight$sex <- factor(ifelse(RatPupWeight$sex == "Male", 1, 0))
 model3.1.fit <- lme(
   weight ~ treatment + sex + lsize + treatment:sex,
   random = ~ 1 | litter,
-  data = RatPupWeight,
+  data = ratpup,
   method = "REML"
 )
 ```
@@ -45,7 +70,7 @@ b_j &\sim \mathcal{N}(0,\sigma_b^2), \quad j = 1,\dots,J \\
 $$
 
 ```{r}
-# RatPupWeight$treatment <- relevel(RatPupWeight$treatment, ref = "High")
+# ratpup$treatment <- relevel(ratpup$treatment, ref = "High")
 summary(model3.1.fit)
 ```
 
